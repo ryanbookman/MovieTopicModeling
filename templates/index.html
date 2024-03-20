@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Movie Review Scraping & ML Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    <style>
+        
+        body {
+            font-family: 'Roboto';
+            margin: 0;
+            padding: 0;
+            background-color: #001c22;
+            color: #f9f9f9;
+        }
+
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+            font-weight: normal;
+        }
+
+        .infoContainer {
+            text-align: center;
+        }
+
+        .search-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            padding: 20px;
+            background-color: rgba(100, 107, 108, 0.5);
+            border-top: 0px solid #007088;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            color: rgba(73, 82, 82, 0.8);
+            width: 600px;
+            /* Adjust the width here */
+            padding: 10px;
+            border: 1px solid #007088;
+            border-radius: 5px 0 0 5px;
+            font-size: 16px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            width: 125px;
+            /* Adjust the width here */
+            padding: 10px;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            background-color: #007088;
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        .info {
+            text-align: center;
+            font-size: 16px;
+        }
+
+        /* Loading container styles */
+        .loading-container {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            padding: 20px;
+            background-color: rgba(100, 107, 108, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .loading-bar {
+            width: 50%;
+            /* Adjust the width here */
+            height: 20px;
+            /* Adjust the height here */
+            background-color: #f3f3f3;
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .loading-progress {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, #f3f3f3, #f3f3f3, #007bff, #f3f3f3, #f3f3f3);
+            background-size: 500% 100%;
+            animation: rainbow 5s linear infinite;
+        }
+
+        @keyframes rainbow {
+            0% {
+                background-position: 0 0;
+            }
+
+            100% {
+                background-position: 100% 0;
+            }
+        }
+
+        .loading-text {
+            color: #f9f9f9;
+            font-size: 16px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .ellipsis {
+            display: inline-block;
+            width: 0.5em;
+            font-weight: bold;
+            opacity: 0;
+            animation: fade 3s infinite;
+        }
+
+        .image-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #sentimentImage {
+            max-width: 80%;
+            max-height: 80%;
+        }
+
+        @keyframes fade {
+
+            0%,
+            20% {
+                opacity: 1;
+            }
+
+            25%,
+            45% {
+                opacity: 0;
+            }
+
+            50%,
+            70% {
+                opacity: 1;
+            }
+
+            75%,
+            95% {
+                opacity: 0;
+            }
+        }
+    </style>
+    <script>
+        function displayImage(imagePath) {
+            const imageContainer = document.getElementById('imageContainer');
+            const sentimentImage = document.getElementById('sentimentImage');
+
+            // Set the image source
+            sentimentImage.src = imagePath;
+
+            // Show the image container
+            imageContainer.style.display = 'flex';
+
+            // Add an event listener to close the image when clicked outside
+            imageContainer.addEventListener('click', function (event) {
+                if (event.target === imageContainer) {
+                    hideImage();
+                }
+            });
+        }
+
+        var currentImagePath = '../static/plot.png';
+
+        setInterval(function () {
+            fetch('/get_image_path')
+                .then(response => response.json())
+                .then(data => {
+                    // Add a timestamp query parameter to the image URL
+                    var imageUrl = data.plot_image_path + '?t=' + new Date().getTime();
+
+                    // Update the image source
+                    document.getElementById('sentimentImage').src = imageUrl;
+                });
+        }, 5000);
+
+        function disableButton() {
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('submitBtn').value = 'Processing...';
+        }
+
+        function showLoading() {
+            document.getElementById('searchContainer').style.display = 'none';
+            document.getElementById('loadingContainer').style.display = 'flex';
+        }
+
+        function submitForm(event) {
+            event.preventDefault(); // Prevent the default form submission
+
+            disableButton();
+            showLoading();
+
+            // Create a new FormData object
+            const formData = new FormData(event.target);
+
+            // Send an AJAX request to the server
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    updateReviewsLength(data.reviews_length);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function updateReviewsLength(length) {
+            const infoContainer = document.getElementById('infoContainer');
+            const querie = document.getElementById('querie').value;
+            infoContainer.innerHTML = `<p>Total reviews scraped for ${querie}: ${length}</p>`;
+
+            // Check if analyzing state is true
+            const analyzing = document.getElementById('loadingContainer').style.display !== 'none';
+
+            // Update loading text based on analyzing state
+            if (analyzing) {
+                const loadingText = document.getElementById('loadingText');
+                loadingText.textContent = 'Analyzing reviews with machine learning';
+                const ellipsisSpan = document.createElement('span');
+                ellipsisSpan.classList.add('ellipsis');
+                ellipsisSpan.textContent = '...';
+                loadingText.appendChild(ellipsisSpan);
+            }
+        }
+
+
+    </script>
+</head>
+
+<body>
+    <h1>Movie Review Scraping & ML Analysis</h1>
+    <div id="infoContainer" class="infoContainer"></div>
+    <div id="searchContainer" class="search-container">
+        <form onsubmit="submitForm(event)">
+            <input type="text" id="querie" name="querie" placeholder="Enter a movie...">
+            <input type="submit" id="submitBtn" value="Submit">
+        </form>
+    </div>
+    <div id="loadingContainer" class="loading-container">
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <p class="loading-text" id="loadingText">Scraping reviews<span class="ellipsis">...</span></p>
+    </div>
+    <div id="imageContainer" class="image-container">
+        <img id="sentimentImage" src="../static/plot.png" alt="Sentiment Distribution">
+
+    </div>
+    {% if plot_image_path %}
+    <script>
+        displayImage('../static/plot.png');
+    </script>
+    {% endif %}
+
+</body>
+
+</html>
