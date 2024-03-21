@@ -32,7 +32,9 @@ The sentiment distribution across different topics will be visualized in a bar c
 
 **Code Structure**
 scrape.py: Contains functions for scraping movie reviews from IMDb using Selenium.
+
 ml.py: Contains functions for preprocessing reviews, clustering them into topics using BERTopic, performing sentiment analysis, generating topic labels, and visualizing the sentiment distribution.
+
 app.py: The Flask application that handles the web interface and coordinates the scraping and analysis processes.
 templates/index.html: The HTML template for the web interface.
 
