@@ -14,7 +14,7 @@ Visualize sentiment distribution across topics in a bar chart
 Clone the repository:
 
 Copy code
-1. git clone [https://github.com/your-username/movie-review-analysis.git](https://github.com/ryanbookman/MovieTopicModeling.git)
+1. git clone https://github.com/ryanbookman/MovieTopicModeling.git
 2. Install the required dependencies.
 3. Add your OpenAI token in app.py.
 
