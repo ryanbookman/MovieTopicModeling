@@ -49,6 +49,4 @@ For a complete list of dependencies, see code imports.
 
 
 **Acknowledgments**
-The BERTopic library: https://github.com/MaartenGr/BERTopic
-OpenAI's GPT-3 language model
-Plotly for data visualization
+The BERTopic library: https://github.com/MaartenGr/BERTopic, OpenAI's GPT-3 language model, Plotly for data visualization
